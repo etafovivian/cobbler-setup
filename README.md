@@ -320,8 +320,8 @@ ss -ulnp | grep :69
 tftp 192.168.5.7 -c get pxelinux.0
 
 # Check boot files exist
-ls -la /srv/tftpboot/pxelinux.0
-ls -la /srv/tftpboot/grub/shimx64.efi
+ls -la /var/lib/tftpboot/pxelinux.0
+ls -la /var/lib/tftpboot/grub/shimx64.efi
 ```
 
 ### Kickstart not loading

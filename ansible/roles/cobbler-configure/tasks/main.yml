@@ -92,6 +92,23 @@
   register: mkloaders_result
   changed_when: true
 
+- name: Ensure TFTP grub directory exists
+  ansible.builtin.file:
+    path: "{{ cobbler_tftpboot_dir }}/grub"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copy shimx64.efi to TFTP grub directory (Secure Boot chain)
+  ansible.builtin.copy:
+    src: /boot/efi/EFI/rocky/shimx64.efi
+    dest: "{{ cobbler_tftpboot_dir }}/grub/shimx64.efi"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: Run cobbler sync
   ansible.builtin.command: cobbler sync
   register: sync_result

@@ -114,7 +114,7 @@ cobbler_extra_packages:
 cobbler_pxe_just_once: true
 
 # TFTP boot location
-cobbler_tftpboot_dir: "/srv/tftpboot"
+cobbler_tftpboot_dir: "/var/lib/tftpboot"
 
 # =============================================================================
 # FIREWALL
