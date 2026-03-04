@@ -53,15 +53,15 @@ subnet {{ cobbler_subnet }} netmask {{ cobbler_netmask }} {
             filename "pxelinux.0";
         }
     }
-}
 
-## ============================================================================
-## COBBLER-MANAGED HOST ENTRIES
-## Generated automatically by 'cobbler sync' from system records.
-## ============================================================================
+    ## ========================================================================
+    ## COBBLER-MANAGED HOST ENTRIES
+    ## Generated automatically by 'cobbler sync' from system records.
+    ## Host entries MUST be inside the subnet block so the pxeclients class
+    ## filename logic applies to them (UEFI/BIOS auto-detection).
+    ## ========================================================================
 
 #for dhcp_tag in $dhcp_tags.keys():
-    ## group for Cobbler DHCP tag: $dhcp_tag
     group {
         #for mac in $dhcp_tags[$dhcp_tag].keys():
             #set iface = $dhcp_tags[$dhcp_tag][$mac]
@@ -83,3 +83,4 @@ subnet {{ cobbler_subnet }} netmask {{ cobbler_netmask }} {
         #end for
     }
 #end for
+}
