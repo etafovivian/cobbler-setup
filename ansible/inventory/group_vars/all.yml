@@ -62,7 +62,7 @@ cobbler_arch: "x86_64"
 # Root password (SHA-512 encrypted).
 # Generate with: python3 -c "import crypt; print(crypt.crypt('yourpassword', crypt.mksalt(crypt.METHOD_SHA512)))"
 # IMPORTANT: Change this before production use!
-cobbler_default_password_crypted: "$6$CHANGEME$CHANGEME_GENERATE_WITH_PYTHON3_CRYPT"
+cobbler_default_password_crypted: "$6$tLuPCNxfUeTOgMJ4$gjqOJdua0BvHrmz2REdjZVfDWLdTscBjzCS3SPTinGMw5CLAWJ4zAIb577SXNJjiciop4031frzWqUH3uV3ou0"
 
 # Timezone for provisioned hosts
 cobbler_timezone: "America/New_York"
