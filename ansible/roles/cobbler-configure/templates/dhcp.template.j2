@@ -60,28 +60,26 @@ subnet {{ cobbler_subnet }} netmask {{ cobbler_netmask }} {
 ## Generated automatically by 'cobbler sync' from system records.
 ## ============================================================================
 
-#for $dhcp_tag in $dhcp_tags.keys()
+#for dhcp_tag in $dhcp_tags.keys():
     ## group for Cobbler DHCP tag: $dhcp_tag
     group {
-        #for $iface in $dhcp_tags[$dhcp_tag].keys()
-            #set $iface_data = $dhcp_tags[$dhcp_tag][$iface]
-            #if $iface_data['mac_address'] != ""
-        host $iface {
-            hardware ethernet $iface_data['mac_address'];
-                #if $iface_data['ip_address'] != ""
-            fixed-address $iface_data['ip_address'];
-                #end if
-                #if $iface_data['hostname'] != ""
-            option host-name "$iface_data['hostname']";
-                #end if
-                #if $iface_data['filename'] != ""
-            filename "$iface_data['filename']";
-                #end if
-                #if $iface_data['next_server'] != ""
-            next-server $iface_data['next_server'];
-                #end if
-        }
+        #for mac in $dhcp_tags[$dhcp_tag].keys():
+            #set iface = $dhcp_tags[$dhcp_tag][$mac]
+        host $iface.name {
+            hardware ethernet $mac;
+            #if $iface.ip_address:
+            fixed-address $iface.ip_address;
             #end if
+            #if $iface.hostname:
+            option host-name "$iface.hostname";
+            #end if
+            #if $iface.filename:
+            filename "$iface.filename";
+            #end if
+            #if $iface.next_server_v4:
+            next-server $iface.next_server_v4;
+            #end if
+        }
         #end for
     }
 #end for
