@@ -16,15 +16,17 @@ When a machine PXE boots on the provisioning network, Cobbler:
 ## Architecture
 
 ```
-                    192.168.1.0/24 (Provisioning Network)
+                    192.168.5.0/24 (Management + Provisioning)
                     ┌──────────────────────────────────────┐
                     │                                      │
 ┌───────────────┐   │   ┌──────────┐    ┌──────────┐       │
 │ Cobbler Server│   │   │ Server A │    │ Server B │  ...  │
 │ 192.168.5.7   │───┤   │ PXE Boot │    │ PXE Boot │       │
-│ 192.168.1.79  │   │   └──────────┘    └──────────┘       │
-│ (ens192)      │   │                                      │
+│ (ens192)      │   │   └──────────┘    └──────────┘       │
 └───────────────┘   └──────────────────────────────────────┘
+
+Gateway: 192.168.5.1
+DHCP pool: 192.168.5.200 — 192.168.5.250
 
 Services on Cobbler:
   - DHCP  (port 67/68)  — hands out IPs + PXE boot info
@@ -38,24 +40,13 @@ Services on Cobbler:
 | Requirement | Details |
 |-------------|---------|
 | Cobbler server OS | Rocky Linux 9 |
-| Server IP | `192.168.5.7` (management) + `192.168.1.79` (provisioning) |
-| NIC | `ens192` (both IPs on this interface) |
+| Server IP | `192.168.5.7` (management + provisioning on same subnet) |
+| NIC | `ens192` |
 | Disk space | 15 GB free on `/var` (for RHEL 9 repo mirror) |
 | SELinux | Must be `permissive` or `disabled` |
 | RHEL 9 ISO | Download from [access.redhat.com](https://access.redhat.com/downloads/content/rhel) |
 | Ansible | Installed on the machine running playbooks |
 | SSH access | Root access to the Cobbler server |
-
-### Adding the secondary IP (provisioning subnet)
-
-The Cobbler server needs an IP on the provisioning network (`192.168.1.0/24`):
-
-```bash
-nmcli connection modify ens192 +ipv4.addresses "192.168.1.79/24"
-nmcli connection up ens192
-```
-
-To remove it later: `nmcli connection modify ens192 -ipv4.addresses "192.168.1.79/24"`
 
 ### Downloading the RHEL 9 ISO
 
@@ -205,19 +196,14 @@ End-to-end health check after setup.
 ```
 Cobbler Server (dns):
   ens192:
-    - 192.168.5.7/24   (management — DNS, SSH, Ansible)
-    - 192.168.1.79/24   (provisioning — DHCP, TFTP, HTTP for PXE)
+    - 192.168.5.7/24   (management + provisioning — DNS, SSH, Ansible, DHCP, TFTP, HTTP)
 
-Provisioning subnet: 192.168.1.0/24
-  Gateway:   192.168.1.254
-  DHCP pool: 192.168.1.80 — 192.168.1.117 (38 addresses)
+Provisioning subnet: 192.168.5.0/24
+  Gateway:   192.168.5.1
+  DHCP pool: 192.168.5.200 — 192.168.5.250 (51 addresses)
   DNS:       192.168.5.7, 192.168.5.1
   Domain:    sgs.com
 ```
-
-### Used IPs on 192.168.1.0/24 (avoid these)
-
-66, 67, 68, 70, 71, 72, 76, 78, 79 (Cobbler), 118, 213, 229, 243, 244, 253, 254 (gateway)
 
 ## Configuration Variables
 
@@ -226,13 +212,13 @@ All variables are in `ansible/inventory/group_vars/all.yml`. Key settings:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `cobbler_server_ip` | `192.168.5.7` | Management IP (SSH, Ansible) |
-| `cobbler_pxe_ip` | `192.168.1.79` | Provisioning IP (DHCP, TFTP, HTTP) |
+| `cobbler_pxe_ip` | `192.168.5.7` | Provisioning IP (DHCP, TFTP, HTTP) |
 | `cobbler_interface` | `ens192` | Network interface |
-| `cobbler_subnet` | `192.168.1.0` | Provisioning subnet |
+| `cobbler_subnet` | `192.168.5.0` | Provisioning subnet |
 | `cobbler_netmask` | `255.255.255.0` | Subnet mask |
-| `cobbler_dhcp_range_start` | `192.168.1.80` | DHCP pool start |
-| `cobbler_dhcp_range_end` | `192.168.1.117` | DHCP pool end |
-| `cobbler_gateway` | `192.168.1.254` | Default gateway for provisioned hosts |
+| `cobbler_dhcp_range_start` | `192.168.5.200` | DHCP pool start |
+| `cobbler_dhcp_range_end` | `192.168.5.250` | DHCP pool end |
+| `cobbler_gateway` | `192.168.5.1` | Default gateway for provisioned hosts |
 | `cobbler_dns_servers` | `192.168.5.7, 192.168.5.1` | DNS servers |
 | `cobbler_domain` | `sgs.com` | DNS domain |
 | `cobbler_iso_path` | `/root/rhel-9-x86_64-dvd.iso` | RHEL 9 ISO location on server |
@@ -252,8 +238,8 @@ NIC sends DHCP broadcast
     │
     ▼
 Cobbler DHCP responds with:
-  - IP from pool (192.168.1.80-117)
-  - TFTP server: 192.168.1.79
+  - IP from pool (192.168.5.200-250)
+  - TFTP server: 192.168.5.7
   - Boot file: shimx64.efi (UEFI) or pxelinux.0 (BIOS)
     │
     ▼
@@ -270,7 +256,7 @@ Loads vmlinuz + initrd.img -> Anaconda starts
     │
     ▼
 Anaconda fetches kickstart from:
-  http://192.168.1.79/cblr/svc/op/autoinstall/profile/rhel9-x86_64
+  http://192.168.5.7/cblr/svc/op/autoinstall/profile/rhel9-x86_64
     │
     ▼
 Unattended RHEL 9 install runs:
@@ -295,9 +281,9 @@ cobbler system add \
   --name=server01 \
   --profile=rhel9-x86_64 \
   --mac=AA:BB:CC:DD:EE:FF \
-  --ip-address=192.168.1.120 \
+  --ip-address=192.168.5.120 \
   --hostname=server01.sgs.com \
-  --gateway=192.168.1.254 \
+  --gateway=192.168.5.1 \
   --name-servers="192.168.5.7 192.168.5.1" \
   --interface=ens192
 
@@ -331,7 +317,7 @@ cat /etc/dhcp/dhcpd.conf | grep -A5 "subnet"
 ss -ulnp | grep :69
 
 # Test TFTP locally
-tftp 192.168.1.79 -c get pxelinux.0
+tftp 192.168.5.7 -c get pxelinux.0
 
 # Check boot files exist
 ls -la /srv/tftpboot/pxelinux.0
@@ -341,7 +327,7 @@ ls -la /srv/tftpboot/grub/shimx64.efi
 ### Kickstart not loading
 ```bash
 # Test HTTP access
-curl -I http://192.168.1.79/cobbler/distro_mirror/rhel9-x86_64/
+curl -I http://192.168.5.7/cobbler/distro_mirror/rhel9-x86_64/
 
 # Check cobblerd is running
 systemctl status cobblerd

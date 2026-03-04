@@ -10,8 +10,8 @@
 # IP address of the Cobbler server (management — used for SSH, Ansible)
 cobbler_server_ip: "192.168.5.7"
 
-# IP address on the provisioning subnet (PXE clients use this for TFTP + HTTP)
-cobbler_pxe_ip: "192.168.1.79"
+# IP address for PXE provisioning (TFTP + HTTP) — same as server_ip on single-subnet
+cobbler_pxe_ip: "192.168.5.7"
 
 # Network interface used for PXE/DHCP/TFTP traffic
 cobbler_interface: "ens192"
@@ -21,15 +21,15 @@ cobbler_interface: "ens192"
 # =============================================================================
 
 # Subnet for PXE provisioning
-cobbler_subnet: "192.168.1.0"
+cobbler_subnet: "192.168.5.0"
 cobbler_netmask: "255.255.255.0"
 
 # DHCP range for dynamic (PXE-booting) clients
-cobbler_dhcp_range_start: "192.168.1.80"
-cobbler_dhcp_range_end: "192.168.1.117"
+cobbler_dhcp_range_start: "192.168.5.200"
+cobbler_dhcp_range_end: "192.168.5.250"
 
-# Default gateway for provisioned hosts (verify with: ip route | grep default on a 192.168.1.x host)
-cobbler_gateway: "192.168.1.254"
+# Default gateway for provisioned hosts
+cobbler_gateway: "192.168.5.1"
 
 # DNS servers
 cobbler_dns_servers:

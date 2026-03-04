@@ -3,7 +3,7 @@
 # Do not edit manually; changes will be overwritten by cobbler-configure role.
 
 # Cobbler server IP (used by PXE clients to reach Cobbler via HTTP/TFTP)
-# This must be the IP on the provisioning subnet (192.168.1.x)
+# This must be the IP reachable by PXE clients on the provisioning subnet
 server: "{{ cobbler_pxe_ip }}"
 
 # TFTP next-server IP (DHCP tells PXE clients to TFTP from this address)
