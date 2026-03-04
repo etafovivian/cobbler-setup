@@ -1,0 +1,11 @@
+---
+# =============================================================================
+# 02 — Configure Cobbler: settings, DHCP, kickstart, firewall, boot loaders
+# =============================================================================
+
+- name: Configure Cobbler
+  hosts: cobbler
+  gather_facts: false
+  roles:
+    - cobbler-configure
+    - cobbler-firewall

@@ -1,0 +1,17 @@
+# /etc/cobbler/modules.conf — Managed by Ansible
+# Do not edit manually.
+
+[authentication]
+module = authentication.configfile
+
+[authorization]
+module = authorization.allowall
+
+[dns]
+module = managers.bind
+
+[dhcp]
+module = managers.isc
+
+[tftpd]
+module = managers.in_tftpd

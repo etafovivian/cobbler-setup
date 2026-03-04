@@ -1,0 +1,10 @@
+---
+# =============================================================================
+# 01 — Install Cobbler and all dependencies
+# =============================================================================
+
+- name: Install Cobbler
+  hosts: cobbler
+  gather_facts: false
+  roles:
+    - cobbler-install

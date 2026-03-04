@@ -1,0 +1,89 @@
+---
+# /etc/cobbler/settings.yaml — Managed by Ansible
+# Do not edit manually; changes will be overwritten by cobbler-configure role.
+
+# Cobbler server IP (used by clients to reach Cobbler via HTTP/TFTP)
+server: "{{ cobbler_server_ip }}"
+
+# TFTP next-server IP (DHCP tells PXE clients to TFTP from this address)
+next_server_v4: "{{ cobbler_server_ip }}"
+next_server_v6: "::1"
+
+# Service management
+manage_dhcp: true
+manage_dhcp_v4: true
+manage_dhcp_v6: false
+manage_tftpd: true
+manage_dns: false
+
+# PXE behavior
+pxe_just_once: {{ cobbler_pxe_just_once | lower }}
+nopxe_with_triggers: true
+
+# Boot menu
+enable_ipxe: false
+enable_menu: true
+
+# TFTP root directory
+tftpboot_location: "{{ cobbler_tftpboot_dir }}"
+
+# GRUB config directory
+grubconfig_dir: "/var/lib/cobbler/grub_config"
+
+# Default root password for provisioned hosts
+default_password_crypted: "{{ cobbler_default_password_crypted }}"
+
+# Boot loader settings
+bootloaders_dir: "/var/lib/cobbler/loaders"
+bootloaders_formats:
+  aarch64:
+    binary_name: "grubaa64.efi"
+  arm:
+    binary_name: "grubarm.efi"
+  arm64-efi:
+    binary_name: "grubaa64.efi"
+  i386-efi:
+    binary_name: "grubia32.efi"
+  i386-pc-pxe:
+    binary_name: "grub.0"
+  powerpc-ieee1275:
+    binary_name: "grub.ppc64le"
+  x86_64-efi:
+    binary_name: "grubx64.efi"
+
+syslinux_dir: "/usr/share/syslinux"
+
+# Misc
+allow_dynamic_settings: false
+autoinstall_snippets_dir: "/var/lib/cobbler/snippets"
+autoinstall_templates_dir: "/var/lib/cobbler/templates"
+build_reporting_enabled: false
+cache_enabled: true
+default_autoinstall: "default.ks"
+default_name_servers:
+{% for dns in cobbler_dns_servers %}
+  - "{{ dns }}"
+{% endfor %}
+default_name_servers_search:
+  - "{{ cobbler_domain }}"
+default_ownership:
+  - "admin"
+default_virt_bridge: "xenbr0"
+default_virt_disk_driver: "raw"
+default_virt_file_size: 5.0
+default_virt_ram: 512
+default_virt_type: "kvm"
+http_port: 80
+kernel_options: {}
+kernel_options_s390x: {}
+proxy_url_ext: ""
+proxy_url_int: ""
+register_new_installs: false
+restart_dhcp: true
+restart_dns: true
+run_install_triggers: true
+scm_track_enabled: false
+scm_track_mode: "git"
+scm_track_author: "cobbler <cobbler@localhost>"
+webdir: "/var/www/cobbler"
+xmlrpc_port: 25151

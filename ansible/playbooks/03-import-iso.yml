@@ -1,0 +1,10 @@
+---
+# =============================================================================
+# 03 — Import RHEL 9 DVD ISO into Cobbler
+# =============================================================================
+
+- name: Import RHEL 9 ISO
+  hosts: cobbler
+  gather_facts: false
+  roles:
+    - cobbler-import

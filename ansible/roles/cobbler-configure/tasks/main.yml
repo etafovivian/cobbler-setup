@@ -1,0 +1,74 @@
+---
+# =============================================================================
+# cobbler-configure — Deploy Cobbler settings, DHCP template, and kickstart
+# =============================================================================
+
+- name: Deploy Cobbler settings.yaml
+  ansible.builtin.template:
+    src: settings.yaml.j2
+    dest: /etc/cobbler/settings.yaml
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  notify:
+    - Restart cobblerd
+
+- name: Deploy Cobbler modules.conf
+  ansible.builtin.template:
+    src: modules.conf.j2
+    dest: /etc/cobbler/modules.conf
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  notify:
+    - Restart cobblerd
+
+- name: Deploy DHCP template
+  ansible.builtin.template:
+    src: dhcp.template.j2
+    dest: /etc/cobbler/dhcp.template
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+
+- name: Ensure kickstart templates directory exists
+  ansible.builtin.file:
+    path: /var/lib/cobbler/templates
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy RHEL 9 kickstart template
+  ansible.builtin.template:
+    src: kickstart-rhel9.ks.j2
+    dest: /var/lib/cobbler/templates/kickstart-rhel9.ks
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Flush handlers before mkloaders
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for cobblerd to be ready
+  ansible.builtin.wait_for:
+    port: 25151
+    host: 127.0.0.1
+    timeout: 30
+
+- name: Generate boot loaders (UEFI + BIOS)
+  ansible.builtin.command: cobbler mkloaders
+  register: mkloaders_result
+  changed_when: "'copying' in mkloaders_result.stdout or mkloaders_result.rc == 0"
+
+- name: Run cobbler sync
+  ansible.builtin.command: cobbler sync
+  register: sync_result
+  changed_when: true
+
+- name: Display sync result
+  ansible.builtin.debug:
+    msg: "{{ sync_result.stdout_lines | default([]) }}"

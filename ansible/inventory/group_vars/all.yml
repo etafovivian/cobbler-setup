@@ -1,0 +1,128 @@
+---
+# =============================================================================
+# Cobbler Setup — All Configurable Variables
+# =============================================================================
+
+# =============================================================================
+# COBBLER SERVER
+# =============================================================================
+
+# IP address of the Cobbler server (must be assigned to cobbler_interface)
+cobbler_server_ip: "192.168.1.10"
+
+# Network interface used for PXE/DHCP/TFTP traffic
+cobbler_interface: "eth0"
+
+# =============================================================================
+# NETWORK / DHCP CONFIGURATION
+# =============================================================================
+
+# Subnet for PXE provisioning
+cobbler_subnet: "192.168.1.0"
+cobbler_netmask: "255.255.255.0"
+
+# DHCP range for dynamic (PXE-booting) clients
+cobbler_dhcp_range_start: "192.168.1.100"
+cobbler_dhcp_range_end: "192.168.1.200"
+
+# Default gateway for provisioned hosts
+cobbler_gateway: "192.168.1.1"
+
+# DNS servers
+cobbler_dns_servers:
+  - "8.8.8.8"
+  - "8.8.4.4"
+
+# DNS domain name
+cobbler_domain: "example.local"
+
+# DHCP lease times (seconds)
+cobbler_dhcp_default_lease: 21600
+cobbler_dhcp_max_lease: 43200
+
+# =============================================================================
+# RHEL 9 ISO IMPORT
+# =============================================================================
+
+# Path to the RHEL 9 DVD ISO on the Cobbler server filesystem
+# Download from https://access.redhat.com/downloads/content/rhel (free dev subscription)
+cobbler_iso_path: "/root/rhel-9-x86_64-dvd.iso"
+
+# Name for the imported distro/profile in Cobbler
+cobbler_distro_name: "rhel9"
+cobbler_arch: "x86_64"
+
+# =============================================================================
+# KICKSTART / AUTOINSTALL SETTINGS
+# =============================================================================
+
+# Root password (SHA-512 encrypted).
+# Generate with: python3 -c "import crypt; print(crypt.crypt('yourpassword', crypt.mksalt(crypt.METHOD_SHA512)))"
+# IMPORTANT: Change this before production use!
+cobbler_default_password_crypted: "$6$CHANGEME$CHANGEME_GENERATE_WITH_PYTHON3_CRYPT"
+
+# Timezone for provisioned hosts
+cobbler_timezone: "America/New_York"
+
+# NTP servers for provisioned hosts
+cobbler_ntp_servers:
+  - "pool.ntp.org"
+
+# Keyboard layout
+cobbler_keyboard: "us"
+
+# Language
+cobbler_lang: "en_US.UTF-8"
+
+# Disk to install on
+cobbler_install_disk: "sda"
+
+# LVM volume group name
+cobbler_vg_name: "rhel"
+
+# Partition sizes (MB, 0 = fill remaining)
+cobbler_part_boot_size: 1024
+cobbler_part_efi_size: 512
+cobbler_part_biosboot_size: 1
+cobbler_part_swap_size: 4096
+cobbler_part_root_size: 0
+
+# SELinux mode on provisioned hosts
+cobbler_selinux_mode: "enforcing"
+
+# Additional packages to install on provisioned hosts
+cobbler_extra_packages:
+  - vim-enhanced
+  - wget
+  - curl
+  - net-tools
+  - bash-completion
+  - chrony
+  - rsync
+  - lsof
+  - tcpdump
+  - bind-utils
+
+# =============================================================================
+# COBBLER SETTINGS
+# =============================================================================
+
+# Prevent PXE boot loops — after successful install, host boots from disk
+cobbler_pxe_just_once: true
+
+# TFTP boot location
+cobbler_tftpboot_dir: "/srv/tftpboot"
+
+# =============================================================================
+# FIREWALL
+# =============================================================================
+
+# Management CIDR allowed to reach Cobbler API (port 25151) and SSH
+cobbler_mgmt_cidr: "192.168.1.0/24"
+
+# =============================================================================
+# SELINUX ON COBBLER SERVER
+# =============================================================================
+
+# SELinux mode for the Cobbler server itself (permissive recommended for Cobbler 3.3.x)
+cobbler_server_selinux: "permissive"

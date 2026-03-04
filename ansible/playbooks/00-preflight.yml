@@ -1,0 +1,10 @@
+---
+# =============================================================================
+# 00 — Preflight: Validate Cobbler server prerequisites
+# =============================================================================
+
+- name: Preflight checks
+  hosts: cobbler
+  gather_facts: true
+  roles:
+    - preflight

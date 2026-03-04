@@ -1,0 +1,90 @@
+---
+# =============================================================================
+# cobbler-import — Import RHEL 9 DVD ISO into Cobbler
+# =============================================================================
+
+- name: Check if RHEL 9 ISO exists
+  ansible.builtin.stat:
+    path: "{{ cobbler_iso_path }}"
+  register: iso_file
+
+- name: Assert ISO file is present
+  ansible.builtin.assert:
+    that:
+      - iso_file.stat.exists
+    fail_msg: |
+      RHEL 9 DVD ISO not found at: {{ cobbler_iso_path }}
+
+      To fix this:
+      1. Download the RHEL 9 DVD ISO from https://access.redhat.com/downloads/content/rhel
+         (A free Red Hat Developer subscription works)
+      2. Copy the ISO to the Cobbler server:
+         scp rhel-9*-x86_64-dvd.iso root@{{ cobbler_server_ip }}:{{ cobbler_iso_path }}
+      3. Re-run this playbook
+
+- name: Create mount point
+  ansible.builtin.file:
+    path: /mnt/rhel9-dvd
+    state: directory
+    mode: "0755"
+
+- name: Mount RHEL 9 ISO
+  ansible.posix.mount:
+    path: /mnt/rhel9-dvd
+    src: "{{ cobbler_iso_path }}"
+    fstype: iso9660
+    opts: loop,ro
+    state: mounted
+
+- name: Check if distro already imported
+  ansible.builtin.command: cobbler distro list
+  register: distro_list
+  changed_when: false
+
+- name: Import RHEL 9 into Cobbler
+  ansible.builtin.command: >
+    cobbler import
+      --name={{ cobbler_distro_name }}
+      --arch={{ cobbler_arch }}
+      --path=/mnt/rhel9-dvd
+  when: (cobbler_distro_name ~ '-' ~ cobbler_arch) not in distro_list.stdout
+  register: import_result
+
+- name: Display import result
+  ansible.builtin.debug:
+    msg: "{{ import_result.stdout_lines | default(['Distro already imported — skipped.']) }}"
+
+- name: Assign kickstart template to profile
+  ansible.builtin.command: >
+    cobbler profile edit
+      --name={{ cobbler_distro_name }}-{{ cobbler_arch }}
+      --autoinstall=kickstart-rhel9.ks
+      --autoinstall-meta="tree=http://{{ cobbler_server_ip }}/cblr/links/{{ cobbler_distro_name }}-{{ cobbler_arch }}"
+  changed_when: true
+
+- name: Run cobbler sync after import
+  ansible.builtin.command: cobbler sync
+  changed_when: true
+
+- name: Unmount RHEL 9 ISO
+  ansible.posix.mount:
+    path: /mnt/rhel9-dvd
+    state: unmounted
+
+- name: Verify distro exists
+  ansible.builtin.command: cobbler distro report --name={{ cobbler_distro_name }}-{{ cobbler_arch }}
+  register: distro_report
+  changed_when: false
+
+- name: Verify profile exists
+  ansible.builtin.command: cobbler profile report --name={{ cobbler_distro_name }}-{{ cobbler_arch }}
+  register: profile_report
+  changed_when: false
+
+- name: Display distro info
+  ansible.builtin.debug:
+    msg: "{{ distro_report.stdout_lines }}"
+
+- name: Display profile info
+  ansible.builtin.debug:
+    msg: "{{ profile_report.stdout_lines }}"

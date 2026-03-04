@@ -1,0 +1,55 @@
+---
+# =============================================================================
+# cobbler-install — Install Cobbler 3.3.7 and all dependencies
+# =============================================================================
+
+- name: Install EPEL release
+  ansible.builtin.dnf:
+    name: epel-release
+    state: present
+
+- name: Enable CRB (Code Ready Builder) repository
+  ansible.builtin.command: dnf config-manager --set-enabled crb
+  changed_when: false
+
+- name: Enable HighAvailability repository (required for fence-agents on Rocky 9)
+  ansible.builtin.command: dnf config-manager --set-enabled highavailability
+  changed_when: false
+
+- name: Install Cobbler and all dependencies
+  ansible.builtin.dnf:
+    name:
+      - cobbler
+      - dhcp-server
+      - tftp-server
+      - syslinux
+      - syslinux-tftpboot
+      - shim-x64
+      - grub2-efi-x64
+      - grub2-efi-x64-modules
+      - createrepo_c
+      - xorriso
+      - fence-agents-all
+      - python3-librepo
+      - rsync
+      - httpd
+      - mod_ssl
+    state: present
+
+- name: Enable and start cobblerd
+  ansible.builtin.systemd:
+    name: cobblerd
+    enabled: true
+    state: started
+
+- name: Enable and start httpd
+  ansible.builtin.systemd:
+    name: httpd
+    enabled: true
+    state: started
+
+- name: Enable and start tftp.socket
+  ansible.builtin.systemd:
+    name: tftp.socket
+    enabled: true
+    state: started

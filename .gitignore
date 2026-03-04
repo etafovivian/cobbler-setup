@@ -1,0 +1,36 @@
+# Claude Code files
+.claude/**
+
+# Secrets
+*.env
+secrets/
+*.creds
+*.pem
+*.key
+*.crt
+passwords.yml
+
+# Ansible runtime
+*.retry
+.ansible/
+
+# Actual inventory (contains IPs)
+ansible/inventory/hosts.yml
+
+# ISOs (too large for git)
+*.iso
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

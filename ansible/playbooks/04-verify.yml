@@ -1,0 +1,10 @@
+---
+# =============================================================================
+# 04 — Verify Cobbler setup end-to-end
+# =============================================================================
+
+- name: Verify Cobbler
+  hosts: cobbler
+  gather_facts: false
+  roles:
+    - cobbler-verify

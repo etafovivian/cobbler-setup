@@ -1,0 +1,90 @@
+---
+# =============================================================================
+# Preflight — Validate Cobbler server prerequisites
+# =============================================================================
+
+- name: Assert OS is Rocky Linux 9
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == "Rocky"
+      - ansible_distribution_major_version == "9"
+    fail_msg: >
+      This playbook requires Rocky Linux 9.
+      Detected: {{ ansible_distribution }} {{ ansible_distribution_version }}
+
+- name: Check free disk space on /var
+  ansible.builtin.shell: df --output=avail -BG /var | tail -1 | tr -d ' G'
+  register: var_free_gb
+  changed_when: false
+
+- name: Assert at least 15 GB free on /var (for ISO mirror)
+  ansible.builtin.assert:
+    that:
+      - var_free_gb.stdout | int >= 15
+    fail_msg: >
+      At least 15 GB free space required on /var for the ISO mirror.
+      Found: {{ var_free_gb.stdout }} GB free.
+
+- name: Check provisioning interface exists
+  ansible.builtin.assert:
+    that:
+      - cobbler_interface in ansible_interfaces
+    fail_msg: >
+      Interface '{{ cobbler_interface }}' not found on this host.
+      Available interfaces: {{ ansible_interfaces | join(', ') }}
+
+- name: Get IP address of provisioning interface
+  ansible.builtin.shell: >
+    ip -4 addr show {{ cobbler_interface }} | grep -oP 'inet \K[\d.]+'
+  register: interface_ip
+  changed_when: false
+  failed_when: interface_ip.rc != 0
+
+- name: Assert cobbler_server_ip is assigned to the interface
+  ansible.builtin.assert:
+    that:
+      - cobbler_server_ip in interface_ip.stdout_lines
+    fail_msg: >
+      IP {{ cobbler_server_ip }} is not assigned to {{ cobbler_interface }}.
+      Found: {{ interface_ip.stdout_lines | join(', ') }}
+
+- name: Get current SELinux mode
+  ansible.builtin.command: getenforce
+  register: selinux_mode
+  changed_when: false
+
+- name: Assert SELinux is permissive or disabled
+  ansible.builtin.assert:
+    that:
+      - selinux_mode.stdout in ['Permissive', 'Disabled']
+    fail_msg: >
+      SELinux must be set to permissive or disabled for Cobbler 3.3.x.
+      Current mode: {{ selinux_mode.stdout }}.
+      Run: setenforce 0 && sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
+
+- name: Check internet connectivity (EPEL repo)
+  ansible.builtin.uri:
+    url: https://dl.fedoraproject.org/pub/epel/
+    method: HEAD
+    timeout: 10
+  register: epel_check
+  failed_when: false
+
+- name: Warn if no internet connectivity
+  ansible.builtin.debug:
+    msg: >
+      WARNING: Cannot reach dl.fedoraproject.org.
+      EPEL repository access is required to install Cobbler.
+      Ensure the server has internet access or configure a local EPEL mirror.
+  when: epel_check.status is not defined or epel_check.status != 200
+
+- name: Display preflight summary
+  ansible.builtin.debug:
+    msg: |
+      ====== PREFLIGHT PASSED ======
+      OS:         {{ ansible_distribution }} {{ ansible_distribution_version }}
+      Interface:  {{ cobbler_interface }} ({{ cobbler_server_ip }})
+      Free space: {{ var_free_gb.stdout }} GB on /var
+      SELinux:    {{ selinux_mode.stdout }}
+      EPEL:       {{ 'reachable' if (epel_check.status is defined and epel_check.status == 200) else 'NOT reachable' }}
+      ================================

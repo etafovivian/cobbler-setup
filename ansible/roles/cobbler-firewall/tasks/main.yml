@@ -1,0 +1,31 @@
+---
+# =============================================================================
+# cobbler-firewall — Configure nftables for Cobbler services
+# =============================================================================
+
+- name: Disable firewalld (conflicts with nftables)
+  ansible.builtin.systemd:
+    name: firewalld
+    enabled: false
+    state: stopped
+  failed_when: false
+
+- name: Install nftables
+  ansible.builtin.dnf:
+    name: nftables
+    state: present
+
+- name: Deploy nftables configuration
+  ansible.builtin.template:
+    src: nftables-cobbler.conf.j2
+    dest: /etc/sysconfig/nftables.conf
+    owner: root
+    group: root
+    mode: "0600"
+    backup: true
+
+- name: Enable and start nftables
+  ansible.builtin.systemd:
+    name: nftables
+    enabled: true
+    state: restarted

@@ -1,0 +1,131 @@
+---
+# =============================================================================
+# cobbler-verify — End-to-end verification of Cobbler setup
+# =============================================================================
+
+- name: Verify cobblerd is running
+  ansible.builtin.systemd:
+    name: cobblerd
+  register: cobblerd_status
+  failed_when: cobblerd_status.status.ActiveState != "active"
+
+- name: Verify httpd is running
+  ansible.builtin.systemd:
+    name: httpd
+  register: httpd_status
+  failed_when: httpd_status.status.ActiveState != "active"
+
+- name: Verify dhcpd is running
+  ansible.builtin.systemd:
+    name: dhcpd
+  register: dhcpd_status
+  failed_when: dhcpd_status.status.ActiveState != "active"
+
+- name: Verify tftp.socket is active
+  ansible.builtin.systemd:
+    name: tftp.socket
+  register: tftp_status
+  failed_when: tftp_status.status.ActiveState != "active"
+
+- name: Run cobbler check
+  ansible.builtin.command: cobbler check
+  register: cobbler_check
+  changed_when: false
+  failed_when: false
+
+- name: Display cobbler check output
+  ansible.builtin.debug:
+    msg: "{{ cobbler_check.stdout_lines }}"
+
+- name: Verify distro exists
+  ansible.builtin.command: cobbler distro report --name={{ cobbler_distro_name }}-{{ cobbler_arch }}
+  register: verify_distro
+  changed_when: false
+
+- name: Verify profile exists
+  ansible.builtin.command: cobbler profile report --name={{ cobbler_distro_name }}-{{ cobbler_arch }}
+  register: verify_profile
+  changed_when: false
+
+- name: Check BIOS bootloader (pxelinux.0)
+  ansible.builtin.stat:
+    path: "{{ cobbler_tftpboot_dir }}/pxelinux.0"
+  register: pxelinux_file
+
+- name: Check UEFI bootloader (shimx64.efi)
+  ansible.builtin.stat:
+    path: "{{ cobbler_tftpboot_dir }}/grub/shimx64.efi"
+  register: shim_file
+
+- name: Check UEFI GRUB (grubx64.efi)
+  ansible.builtin.stat:
+    path: "{{ cobbler_tftpboot_dir }}/grub/grubx64.efi"
+  register: grub_file
+
+- name: Check kernel image
+  ansible.builtin.stat:
+    path: "{{ cobbler_tftpboot_dir }}/images/{{ cobbler_distro_name }}-{{ cobbler_arch }}/vmlinuz"
+  register: kernel_file
+
+- name: Check initrd image
+  ansible.builtin.stat:
+    path: "{{ cobbler_tftpboot_dir }}/images/{{ cobbler_distro_name }}-{{ cobbler_arch }}/initrd.img"
+  register: initrd_file
+
+- name: Verify HTTP repo mirror is accessible
+  ansible.builtin.uri:
+    url: "http://{{ cobbler_server_ip }}/cobbler/distro_mirror/{{ cobbler_distro_name }}-{{ cobbler_arch }}/"
+    method: GET
+    status_code: 200
+    timeout: 10
+  register: http_check
+
+- name: Check DHCP config contains subnet
+  ansible.builtin.command: grep -c "subnet {{ cobbler_subnet }}" /etc/dhcp/dhcpd.conf
+  register: dhcp_subnet_check
+  changed_when: false
+
+- name: Check DHCP config contains UEFI filename
+  ansible.builtin.command: grep -c "shimx64.efi" /etc/dhcp/dhcpd.conf
+  register: dhcp_uefi_check
+  changed_when: false
+
+- name: Check DHCP config contains BIOS filename
+  ansible.builtin.command: grep -c "pxelinux.0" /etc/dhcp/dhcpd.conf
+  register: dhcp_bios_check
+  changed_when: false
+
+- name: Display verification summary
+  ansible.builtin.debug:
+    msg: |
+      ====== COBBLER VERIFICATION SUMMARY ======
+      Services:
+        cobblerd:     {{ cobblerd_status.status.ActiveState }}
+        httpd:        {{ httpd_status.status.ActiveState }}
+        dhcpd:        {{ dhcpd_status.status.ActiveState }}
+        tftp.socket:  {{ tftp_status.status.ActiveState }}
+
+      Cobbler Objects:
+        Distro:  {{ cobbler_distro_name }}-{{ cobbler_arch }} — {{ 'FOUND' if verify_distro.rc == 0 else 'MISSING' }}
+        Profile: {{ cobbler_distro_name }}-{{ cobbler_arch }} — {{ 'FOUND' if verify_profile.rc == 0 else 'MISSING' }}
+
+      TFTP Boot Files:
+        pxelinux.0 (BIOS):      {{ 'OK' if pxelinux_file.stat.exists else 'MISSING' }}
+        shimx64.efi (UEFI):     {{ 'OK' if shim_file.stat.exists else 'MISSING' }}
+        grubx64.efi (UEFI):     {{ 'OK' if grub_file.stat.exists else 'MISSING' }}
+        vmlinuz (kernel):       {{ 'OK' if kernel_file.stat.exists else 'MISSING' }}
+        initrd.img (initrd):    {{ 'OK' if initrd_file.stat.exists else 'MISSING' }}
+
+      HTTP Mirror:  {{ 'OK (HTTP 200)' if http_check.status == 200 else 'FAILED' }}
+
+      DHCP Config:
+        Subnet {{ cobbler_subnet }}: {{ 'OK' if dhcp_subnet_check.rc == 0 else 'MISSING' }}
+        UEFI boot entry:        {{ 'OK' if dhcp_uefi_check.rc == 0 else 'MISSING' }}
+        BIOS boot entry:        {{ 'OK' if dhcp_bios_check.rc == 0 else 'MISSING' }}
+      ============================================
+
+      Cobbler is ready for PXE provisioning.
+      Next steps:
+        1. PXE boot a machine on the {{ cobbler_subnet }}/{{ cobbler_netmask }} network
+        2. It should get a DHCP lease and load the boot menu
+        3. RHEL 9 will install automatically via kickstart

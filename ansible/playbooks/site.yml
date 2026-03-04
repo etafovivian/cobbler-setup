@@ -1,0 +1,10 @@
+---
+# =============================================================================
+# Cobbler Setup — Full Bootstrap (runs 00 through 04 in sequence)
+# =============================================================================
+
+- import_playbook: 00-preflight.yml
+- import_playbook: 01-install-cobbler.yml
+- import_playbook: 02-configure-cobbler.yml
+- import_playbook: 03-import-iso.yml
+- import_playbook: 04-verify.yml
