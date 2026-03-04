@@ -59,7 +59,7 @@
     cobbler profile edit
       --name={{ cobbler_distro_name }}-{{ cobbler_arch }}
       --autoinstall=kickstart-rhel9.ks
-      --autoinstall-meta="tree=http://{{ cobbler_server_ip }}/cblr/links/{{ cobbler_distro_name }}-{{ cobbler_arch }}"
+      --autoinstall-meta="tree=http://{{ cobbler_pxe_ip }}/cblr/links/{{ cobbler_distro_name }}-{{ cobbler_arch }}"
   changed_when: true
 
 - name: Run cobbler sync after import

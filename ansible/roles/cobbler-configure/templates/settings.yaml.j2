@@ -2,11 +2,12 @@
 # /etc/cobbler/settings.yaml — Managed by Ansible
 # Do not edit manually; changes will be overwritten by cobbler-configure role.
 
-# Cobbler server IP (used by clients to reach Cobbler via HTTP/TFTP)
-server: "{{ cobbler_server_ip }}"
+# Cobbler server IP (used by PXE clients to reach Cobbler via HTTP/TFTP)
+# This must be the IP on the provisioning subnet (192.168.1.x)
+server: "{{ cobbler_pxe_ip }}"
 
 # TFTP next-server IP (DHCP tells PXE clients to TFTP from this address)
-next_server_v4: "{{ cobbler_server_ip }}"
+next_server_v4: "{{ cobbler_pxe_ip }}"
 next_server_v6: "::1"
 
 # Service management

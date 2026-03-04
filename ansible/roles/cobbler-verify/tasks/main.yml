@@ -74,7 +74,7 @@
 
 - name: Verify HTTP repo mirror is accessible
   ansible.builtin.uri:
-    url: "http://{{ cobbler_server_ip }}/cobbler/distro_mirror/{{ cobbler_distro_name }}-{{ cobbler_arch }}/"
+    url: "http://{{ cobbler_pxe_ip }}/cobbler/distro_mirror/{{ cobbler_distro_name }}-{{ cobbler_arch }}/"
     method: GET
     status_code: 200
     timeout: 10
