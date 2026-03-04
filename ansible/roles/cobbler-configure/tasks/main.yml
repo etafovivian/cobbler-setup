@@ -15,27 +15,27 @@
 
 # --- Modify settings using cobbler-settings CLI (works without cobblerd running) ---
 - name: Set server IP (PXE clients reach Cobbler here)
-  ansible.builtin.command: cobbler-settings modify --name=server --value="{{ cobbler_pxe_ip }}"
+  ansible.builtin.command: cobbler-settings modify -k server -v "{{ cobbler_pxe_ip }}"
 
 - name: Set next_server_v4 (TFTP server for PXE)
-  ansible.builtin.command: cobbler-settings modify --name=next_server_v4 --value="{{ cobbler_pxe_ip }}"
+  ansible.builtin.command: cobbler-settings modify -k next_server_v4 -v "{{ cobbler_pxe_ip }}"
 
 - name: Enable DHCP management
-  ansible.builtin.command: cobbler-settings modify --name=manage_dhcp --value=1
+  ansible.builtin.command: cobbler-settings modify -k manage_dhcp -v 1
 
 - name: Enable DHCP v4 management
-  ansible.builtin.command: cobbler-settings modify --name=manage_dhcp_v4 --value=1
+  ansible.builtin.command: cobbler-settings modify -k manage_dhcp_v4 -v 1
 
 - name: Enable TFTP management
-  ansible.builtin.command: cobbler-settings modify --name=manage_tftpd --value=1
+  ansible.builtin.command: cobbler-settings modify -k manage_tftpd -v 1
 
 - name: Set pxe_just_once
-  ansible.builtin.command: cobbler-settings modify --name=pxe_just_once --value=1
+  ansible.builtin.command: cobbler-settings modify -k pxe_just_once -v 1
 
 - name: Set default password
   ansible.builtin.command: >
-    cobbler-settings modify --name=default_password_crypted
-    --value="{{ cobbler_default_password_crypted }}"
+    cobbler-settings modify -k default_password_crypted
+    -v "{{ cobbler_default_password_crypted }}"
 
 # --- Deploy modules.conf ---
 - name: Deploy Cobbler modules.conf
