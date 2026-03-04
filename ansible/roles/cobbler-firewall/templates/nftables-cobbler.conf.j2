@@ -17,8 +17,8 @@ table inet filter {
 
         ## ICMP
         icmp type echo-request limit rate 10/second accept
-        icmpv6 type { echo-request, nd-neighbor-solicit, nd-neighbor-advertise,
-                      nd-router-solicit, nd-router-advertise } accept
+        icmpv6 type { echo-request, nd-neighbor-solicit, nd-neighbor-advert,
+                      nd-router-solicit, nd-router-advert } accept
 
         ## SSH — management CIDR only
         ip saddr {{ cobbler_mgmt_cidr }} tcp dport 22 accept
