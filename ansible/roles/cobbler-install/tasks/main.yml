@@ -2,6 +2,9 @@
 # =============================================================================
 # cobbler-install — Install Cobbler 3.3.7 and all dependencies
 # =============================================================================
+# On a fresh server, the RPM installs a valid default settings.yaml.
+# We do NOT start cobblerd here — cobbler-configure will modify settings
+# and start it after configuration is complete.
 
 - name: Install EPEL release
   ansible.builtin.dnf:
@@ -36,20 +39,19 @@
       - mod_ssl
     state: present
 
-- name: Enable and start cobblerd
-  ansible.builtin.systemd:
-    name: cobblerd
-    enabled: true
-    state: started
-
-- name: Enable and start httpd
+- name: Enable httpd
   ansible.builtin.systemd:
     name: httpd
     enabled: true
     state: started
 
-- name: Enable and start tftp.socket
+- name: Enable tftp.socket
   ansible.builtin.systemd:
     name: tftp.socket
     enabled: true
     state: started
+
+- name: Enable cobblerd (but do not start yet — configure role handles this)
+  ansible.builtin.systemd:
+    name: cobblerd
+    enabled: true

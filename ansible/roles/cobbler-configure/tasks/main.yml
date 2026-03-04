@@ -1,19 +1,43 @@
 ---
 # =============================================================================
-# cobbler-configure — Deploy Cobbler settings, DHCP template, and kickstart
+# cobbler-configure — Configure Cobbler settings, DHCP, kickstart
 # =============================================================================
+# Uses cobbler-settings CLI to modify the RPM default settings.yaml.
+# This preserves all required fields that Cobbler validates on startup.
+# Works for both fresh installs and re-runs.
 
-- name: Deploy Cobbler settings.yaml
-  ansible.builtin.template:
-    src: settings.yaml.j2
-    dest: /etc/cobbler/settings.yaml
-    owner: root
-    group: root
-    mode: "0644"
-    backup: true
-  notify:
-    - Restart cobblerd
+# --- Ensure cobblerd is stopped before modifying settings ---
+- name: Stop cobblerd if running (settings will be modified)
+  ansible.builtin.systemd:
+    name: cobblerd
+    state: stopped
+  failed_when: false
 
+# --- Modify settings using cobbler-settings CLI (works without cobblerd running) ---
+- name: Set server IP (PXE clients reach Cobbler here)
+  ansible.builtin.command: cobbler-settings modify --name=server --value="{{ cobbler_pxe_ip }}"
+
+- name: Set next_server_v4 (TFTP server for PXE)
+  ansible.builtin.command: cobbler-settings modify --name=next_server_v4 --value="{{ cobbler_pxe_ip }}"
+
+- name: Enable DHCP management
+  ansible.builtin.command: cobbler-settings modify --name=manage_dhcp --value=1
+
+- name: Enable DHCP v4 management
+  ansible.builtin.command: cobbler-settings modify --name=manage_dhcp_v4 --value=1
+
+- name: Enable TFTP management
+  ansible.builtin.command: cobbler-settings modify --name=manage_tftpd --value=1
+
+- name: Set pxe_just_once
+  ansible.builtin.command: cobbler-settings modify --name=pxe_just_once --value=1
+
+- name: Set default password
+  ansible.builtin.command: >
+    cobbler-settings modify --name=default_password_crypted
+    --value="{{ cobbler_default_password_crypted }}"
+
+# --- Deploy modules.conf ---
 - name: Deploy Cobbler modules.conf
   ansible.builtin.template:
     src: modules.conf.j2
@@ -22,9 +46,8 @@
     group: root
     mode: "0644"
     backup: true
-  notify:
-    - Restart cobblerd
 
+# --- Deploy DHCP template ---
 - name: Deploy DHCP template
   ansible.builtin.template:
     src: dhcp.template.j2
@@ -34,6 +57,7 @@
     mode: "0644"
     backup: true
 
+# --- Deploy kickstart ---
 - name: Ensure kickstart templates directory exists
   ansible.builtin.file:
     path: /var/lib/cobbler/templates
@@ -50,19 +74,23 @@
     group: root
     mode: "0644"
 
-- name: Flush handlers before mkloaders
-  ansible.builtin.meta: flush_handlers
+# --- Start cobblerd with configured settings ---
+- name: Start cobblerd
+  ansible.builtin.systemd:
+    name: cobblerd
+    state: started
 
 - name: Wait for cobblerd to be ready
   ansible.builtin.wait_for:
     port: 25151
     host: 127.0.0.1
-    timeout: 30
+    timeout: 60
 
+# --- Generate bootloaders and sync ---
 - name: Generate boot loaders (UEFI + BIOS)
   ansible.builtin.command: cobbler mkloaders
   register: mkloaders_result
-  changed_when: "'copying' in mkloaders_result.stdout or mkloaders_result.rc == 0"
+  changed_when: true
 
 - name: Run cobbler sync
   ansible.builtin.command: cobbler sync
