@@ -13,6 +13,6 @@ all:
 
 cobbler:
   hosts:
-    cobbler-server:
-      ansible_host: 192.168.1.10       # CHANGE: Cobbler server IP
-      cobbler_interface: eth0            # CHANGE: NIC for PXE/DHCP traffic
+    dns:
+      ansible_host: 192.168.5.7
+      cobbler_interface: ens192

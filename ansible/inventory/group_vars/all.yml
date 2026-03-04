@@ -7,11 +7,14 @@
 # COBBLER SERVER
 # =============================================================================
 
-# IP address of the Cobbler server (must be assigned to cobbler_interface)
-cobbler_server_ip: "192.168.1.10"
+# IP address of the Cobbler server (management — used for SSH, Ansible)
+cobbler_server_ip: "192.168.5.7"
+
+# IP address on the provisioning subnet (PXE clients use this for TFTP + HTTP)
+cobbler_pxe_ip: "192.168.1.79"
 
 # Network interface used for PXE/DHCP/TFTP traffic
-cobbler_interface: "eth0"
+cobbler_interface: "ens192"
 
 # =============================================================================
 # NETWORK / DHCP CONFIGURATION
@@ -22,19 +25,19 @@ cobbler_subnet: "192.168.1.0"
 cobbler_netmask: "255.255.255.0"
 
 # DHCP range for dynamic (PXE-booting) clients
-cobbler_dhcp_range_start: "192.168.1.100"
-cobbler_dhcp_range_end: "192.168.1.200"
+cobbler_dhcp_range_start: "192.168.1.80"
+cobbler_dhcp_range_end: "192.168.1.117"
 
-# Default gateway for provisioned hosts
-cobbler_gateway: "192.168.1.1"
+# Default gateway for provisioned hosts (verify with: ip route | grep default on a 192.168.1.x host)
+cobbler_gateway: "192.168.1.254"
 
 # DNS servers
 cobbler_dns_servers:
-  - "8.8.8.8"
-  - "8.8.4.4"
+  - "192.168.5.7"
+  - "192.168.5.1"
 
 # DNS domain name
-cobbler_domain: "example.local"
+cobbler_domain: "sgs.com"
 
 # DHCP lease times (seconds)
 cobbler_dhcp_default_lease: 21600
@@ -118,7 +121,7 @@ cobbler_tftpboot_dir: "/srv/tftpboot"
 # =============================================================================
 
 # Management CIDR allowed to reach Cobbler API (port 25151) and SSH
-cobbler_mgmt_cidr: "192.168.1.0/24"
+cobbler_mgmt_cidr: "192.168.5.0/24"
 
 # =============================================================================
 # SELINUX ON COBBLER SERVER
