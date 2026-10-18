@@ -101,12 +101,23 @@
   ansible.builtin.debug:
     msg: "{{ sync_result.stdout_lines | default([]) }}"
 
-# shimx64.efi must be copied AFTER cobbler sync — sync regenerates the grub
-# directory and does not include the shim. Without it, UEFI Secure Boot fails.
+# shimx64.efi and grubx64.efi must be copied AFTER cobbler sync — sync
+# regenerates the grub directory. The mkloaders-built grubx64.efi is missing
+# the linuxefi/initrdefi modules that Cobbler's grub.cfg requires.
+# Rocky's system copies have all required modules.
 - name: Copy shimx64.efi to TFTP grub directory (Secure Boot chain)
   ansible.builtin.copy:
     src: /boot/efi/EFI/rocky/shimx64.efi
     dest: "{{ cobbler_tftpboot_dir }}/grub/shimx64.efi"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Copy grubx64.efi to TFTP grub directory (has linuxefi module)
+  ansible.builtin.copy:
+    src: /boot/efi/EFI/rocky/grubx64.efi
+    dest: "{{ cobbler_tftpboot_dir }}/grub/grubx64.efi"
     remote_src: true
     owner: root
     group: root
